@@ -1,7 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
-# from pymongo import MongoClient
+from pymongo import MongoClient
 
 
 def fetch_article(url):
@@ -28,13 +28,13 @@ def fetch_article(url):
             article_data['thumbnail'] = None
 
         summary_list = []
-        toc = soup.find('div ol', class_="summary-inner")
+        toc = soup.find('ol', class_="summary-inner")
         if toc:
             for li in toc.find_all('li'):
                 summary_list.append(li.get_text(strip=True))
         article_data['summary'] = summary_list
 
-        category_tag = soup.find('h2', class_='post-190096')
+        category_tag = soup.find('h2', class_='post-190096-titre^')
         article_data['subcategory'] = category_tag.get_text(strip=True) if category_tag else None
 
         excerpt_tag = soup.find('div', class_="article-hat")
@@ -60,17 +60,20 @@ def fetch_article(url):
         else:
             article_data['content'] = None
 
+        alt_tag = soup.find('figcaption' , class_="legend")
         images_data = []
         if content_div:
             for img in content_div.find_all('img'):
                 img_info = {
                     "url": extract_img_url(img),
-                    "alt": img.get('alt', None),
+                    "alt": img.get('alt_tag', None),
                 }
                 images_data.append(img_info)
         article_data['images'] = images_data
 
-        # save_to_mongo(article_data)
+        
+
+        save_to_mongo(article_data)
 
         return article_data
 
@@ -92,13 +95,13 @@ def extract_img_url(img_tag):
     return None
 
 
-# def save_to_mongo(article_data):
-#     """Connexion et insertion dans MongoDB"""
-#     client = MongoClient("mongodb://localhost:27017/") 
-#     db = client['scraping_db']
-#     collection = db['article']
-#     collection.insert_one(article_data)
-#     print("Article sauvegardé dans MongoDB.")
+def save_to_mongo(article_data):
+    """Connexion et insertion dans MongoDB"""
+    client = MongoClient("mongodb+srv://mcordier:BHk9Zz8k9DsxHR3Q@cluster0.8uuayyf.mongodb.net/") 
+    db = client['scraping_db']
+    collection = db['article']
+    collection.insert_one(article_data)
+    print("Article sauvegardé dans MongoDB.")
 
 
 if __name__ == "__main__":
